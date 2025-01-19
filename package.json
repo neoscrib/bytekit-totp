@@ -1,7 +1,11 @@
 {
   "name": "@bytekit/totp",
   "version": "1.0.2",
-  "main": "./dist/cjs/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:neoscrib/bytekit-totp.git"
+  },
+  "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
   "type": "module",
   "types": "./index.d.ts",
@@ -10,8 +14,10 @@
     "dist"
   ],
   "exports": {
-    "import": "./dist/esm/index.js",
-    "require": "./dist/cjs/index.js"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
+    }
   },
   "keywords": [
     "otp",
@@ -23,10 +29,7 @@
   ],
   "scripts": {
     "test": "vitest run --coverage",
-    "clean": "rm -rf ./dist/*",
-    "build:esm": "tsc --project tsconfig.esm.json",
-    "build:cjs": "tsc --project tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > ./dist/cjs/package.json",
-    "build": "yarn clean && yarn build:esm && yarn build:cjs"
+    "build": "vite build"
   },
   "author": "Tanner Jepsen <neoscrib@gmail.com>",
   "license": "ISC",
