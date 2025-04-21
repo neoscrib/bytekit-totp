@@ -21,6 +21,17 @@ describe("encoding", () => {
       expect(() => base32decode("JBSWY3DPE1PK3PXP")).toThrow("Invalid base-32 character '1'");
     });
 
+    it("performance test", () => {
+      const start = performance.now();
+      for (let i = 0; i < 10000; i++) {
+        const actual = new TextDecoder().decode(base32decode("MZXW6YTBOI======"));
+        expect(actual).toEqual("foobar");
+      }
+      const elapsed = performance.now() - start;
+      console.log(elapsed);
+      expect(elapsed).toBeLessThan(10000);
+    });
+
     for (const [input, expected] of [
       ["", ""],
       ["MY======", "f"],

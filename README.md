@@ -1,92 +1,121 @@
 # @bytekit/totp
 
-A library to generate TOTP and HOTP tokens.
+A lightweight, promise-based library for generating TOTP and HOTP tokens in Node.js and browser environments. Fully supports standard OTP URI parsing and flexible configuration options.
+
+## Features
+
+- 🔐 Generate Time-based One-Time Passwords (TOTP)
+- 🔢 Generate HMAC-based One-Time Passwords (HOTP)
+- 🌐 Parse and extract OTP configuration from standard otpauth:// URIs
+- 📦 Lightweight and dependency-free
+
+## Installation
+
+```bash
+npm install @bytekit/totp
+```
+
+or
+
+```bash
+yarn add @bytekit/totp
+```
 
 ## Usage
 
-```ts
-import {totp} from "@bytekit/totp";
+### Generate a TOTP
 
-const result = await totp("JBSWY3DPEHPK3PXP");
-console.log(result);
+```ts
+import { totp } from "@bytekit/totp";
+
+const token = await totp({
+  key: "JBSWY3DPEHPK3PXP", // base32 or Uint8Array
+  digits: 6,              // optional, default: 6
+  algorithm: "SHA-1",     // optional, default: SHA-1
+  period: 30,             // optional, default: 30
+  timestamp: Date.now(),  // optional, default: now
+});
+
+console.log(token.token); // => "123456"
+console.log(token.expires);   // Timestamp when this token expires
+console.log(token.next);      // Next valid token
+console.log(token.previous);  // Previous valid token
 ```
 
-Example output of the above:
+### Generate a HOTP
 
-```js
+```ts
+import { hotp } from "@bytekit/totp";
+
+const key = new Uint8Array([/* your binary secret key */]);
+const counter = new Uint8Array([/* your counter as binary */]);
+
+const token = await hotp(key, counter, 6, "SHA-1");
+
+console.log(token); // => "654321"
+```
+
+### Parse an OTP URI
+
+```ts
+import { parseOtpUri } from "@bytekit/totp";
+
+const otpAuth = parseOtpUri("otpauth://totp/Example:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example");
+
+console.log(otpAuth);
+/*
 {
-  expires: 1736638440,
-  token: "482223",
-  previous: "534333",
-  next: "291802"
+  type: 'totp',
+  account: 'user@example.com',
+  issuer: 'Example',
+  key: 'JBSWY3DPEHPK3PXP',
+  digits: 6,
+  algorithm: 'SHA-1',
+  period: 30
+}
+*/
+```
+
+## Types
+
+### `ITotpOptions`
+
+| Option     | Type               | Default  | Description                                         |
+|------------|--------------------|----------|-----------------------------------------------------|
+| `key`      | `string` or `Uint8Array` | —        | Secret key in base32 or binary                      |
+| `digits`   | `number`           | `6`      | Number of digits in the OTP                         |
+| `algorithm`| `string`           | `"SHA-1"`| Hashing algorithm (`SHA-1`, `SHA-256`, etc.)        |
+| `period`   | `number`           | `30`     | Validity period in seconds                          |
+| `timestamp`| `number`           | `now`    | Unix timestamp to calculate OTP for                 |
+
+### `ITotpToken`
+
+```ts
+interface ITotpToken {
+  token: string;
+  expires: number;
+  next: string;
+  previous: string;
 }
 ```
 
-## API
+### `IOtpAuth`
 
-### totp
-
-The `totp` method generates a time-based one-time password along with expiration, previous, and next values.
-
-#### Syntax
-```ts
-totp(options)
-```
-
-#### Parameters
-
-`options` An [ITotpOptions](#itotpoptions) object containing the key and other options used for generating the token.
-
-#### Return value
-
-Returns an [ITotpToken](#itotptoken) object containing the token, expiration, next, and previous values.
-
-#### Examples
+Returned by `parseOtpUri`.
 
 ```ts
-import {totp} from "@bytekit/totp";
-
-const result = await totp("JBSWY3DPEHPK3PXP");
-console.log(result);
-```
-
-Example output of the above:
-
-```js
-{
-  expires: 1736638440,
-  token: "482223",
-  previous: "534333",
-  next: "291802"
+interface IOtpAuth {
+  type: string;
+  account: string;
+  issuer?: string;
+  key: string | Uint8Array;
+  digits?: number;
+  algorithm?: string;
+  period?: number;
+  counter?: number;
 }
 ```
 
-### ITotpOptions
+## License
 
-An object containing the key and other options used for generating TOTP tokens.
-
-#### Instance properties
-
-`key` _string | Uint8Array_ The key used to generate the token.
-
-`digits` _number_ Optional. The number of digits to include in the token. Default is 6.
-
-`algorithm` _string_ Optional. The hashing algorithm to use. Can be one of `SHA-1`; `SHA-256`; `SHA-384`; or `SHA-512`. Default is `SHA-1`.
-
-`period` _number_ Optional. The time period, in seconds, for token generation. Default is 30 seconds.
-
-`timestamp` _number_ Optional. The unix epoch (seconds since Jan 1, 1970) to use for token generation. Default is the current unix epoch.
-
-### ITotpToken
-
-An object containing the token, expiration, next, and previous values from a call to the `totp` method.
-
-#### Instance properties
-
-`token` _string_ The generated TOTP token.
-
-`expires` _number_ The unix epoch at which point the token is no longer valid.
-
-`next` _string_ The TOTP token that will be valid for the time period following the current time period.
-
-`previous` _string_ The TOTP token that was valid for the time period preceding the current time period.
+MIT
