@@ -33,7 +33,7 @@ const token = await totp({
   digits: 6,              // optional, default: 6
   algorithm: "SHA-1",     // optional, default: SHA-1
   period: 30,             // optional, default: 30
-  timestamp: Date.now(),  // optional, default: now
+  timestamp: Date.now() / 1000,  // optional, default: now (seconds)
 });
 
 console.log(token.token); // => "123456"

@@ -28,8 +28,9 @@ declare interface ITotpToken {
   previous: string;
 }
 
-declare interface IOtpAuth extends Exclude<ITotpOptions, "timestamp"> {
-  type: string;
+declare interface IOtpAuth extends Omit<ITotpOptions, "timestamp" | "key"> {
+  key: string;
+  type: "totp" | "hotp";
   account: string;
   issuer?: string;
   counter?: number;
@@ -48,10 +49,20 @@ declare module "@bytekit/totp" {
    * @param digits The number of digits to return
    * @param alg The HMAC hash algorithm to use
    */
-  export function hotp(key: Uint8Array, data: Uint8Array, digits?: number, alg?: string): Promise<string>;
+  export function hotp(
+    key: Uint8Array,
+    data: Uint8Array,
+    digits?: number,
+    alg?: string
+  ): Promise<string>;
   /**
    * Parses a OTP URI
    * @param uri The URI to parse
    */
   export function parseOtpUri(uri: string): IOtpAuth;
+  /**
+   * Generates an OTP auth URI from token settings
+   * @param token The token configuration
+   */
+  export function generateOtpUri(token: IOtpAuth): string;
 }

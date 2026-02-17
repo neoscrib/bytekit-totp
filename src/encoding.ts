@@ -3,42 +3,63 @@ export const binaryToHex = (input: Uint8Array): string => {
 };
 
 export const hexToBinary = (input: string): Uint8Array => {
-  if (input.length % 2 !== 0) {
-    input = "0" + input;
-  }
-
-  const buffer = new Uint8Array(input.length / 2);
-  for (let i = 0; i < buffer.length; i++) {
-    buffer[i] = parseInt(input.substring(i * 2, i * 2 + 2), 16) & 0xff;
+  const normalized = input.length % 2 === 0 ? input : `0${input}`;
+  const buffer = new Uint8Array(normalized.length / 2);
+  for (
+    let outputIndex = 0, inputOffset = 0;
+    inputOffset < normalized.length;
+    outputIndex++, inputOffset += 2
+  ) {
+    const byte = Number.parseInt(
+      normalized.slice(inputOffset, inputOffset + 2),
+      16
+    );
+    if (Number.isNaN(byte)) {
+      throw new TypeError("Invalid hex input");
+    }
+    buffer[outputIndex] = byte;
   }
   return buffer;
 };
 
 /**
- * 
+ *
  * @see https://datatracker.ietf.org/doc/html/rfc4648#section-6
  */
 export const base32decode = (input: string): Uint8Array => {
-  if (!input.length) {
-    return new Uint8Array();
-  }
+  let value = 0;
+  let bits = 0;
+  let sawPadding = false;
+  const bytes: number[] = [];
 
-  let n = BigInt(0);
-  for (const c of [...input.toUpperCase().replace(/=+$/, "")]) {
-    const m = c.charCodeAt(0) - (/[2-7]/.test(c) ? 24 : 65);
-    if (m < 0 || m > 31) {
+  for (const c of input.toUpperCase()) {
+    if (c === "=") {
+      sawPadding = true;
+      continue;
+    }
+
+    if (sawPadding) {
+      throw new Error("Invalid base-32 padding");
+    }
+
+    let m: number;
+    if (/[A-Z]/.test(c)) {
+      m = c.codePointAt(0)! - 65;
+    } else if (/[2-7]/.test(c)) {
+      m = c.codePointAt(0)! - 24;
+    } else {
       throw new Error(`Invalid base-32 character '${c}'`);
     }
-    n = (n << 5n) | BigInt(m);
-  }
-  
-  const padding = /=+$/.exec(input)?.[0].length;
-  if (padding) {
-    const extraBits = BigInt(8 - ((padding * 5) % 8));
-    n >>= extraBits;
+
+    value = (value << 5) | m;
+    bits += 5;
+
+    while (bits >= 8) {
+      bits -= 8;
+      bytes.push((value >> bits) & 0xff);
+      value &= (1 << bits) - 1;
+    }
   }
 
-  const binary = hexToBinary(n.toString(16));
-
-  return binary;
+  return new Uint8Array(bytes);
 };
